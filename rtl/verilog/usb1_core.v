@@ -38,16 +38,21 @@
 
 //  CVS Log
 //
-//  $Id: usb1_core.v,v 1.1 2002-09-25 06:06:49 rudi Exp $
+//  $Id: usb1_core.v,v 1.2 2002-10-11 05:48:20 rudi Exp $
 //
-//  $Date: 2002-09-25 06:06:49 $
-//  $Revision: 1.1 $
+//  $Date: 2002-10-11 05:48:20 $
+//  $Revision: 1.2 $
 //  $Author: rudi $
 //  $Locker:  $
 //  $State: Exp $
 //
 // Change History:
 //               $Log: not supported by cvs2svn $
+//               Revision 1.1  2002/09/25 06:06:49  rudi
+//               - Added New Top Level
+//               - Remove old top level and associated files
+//               - Moved FIFOs to "Generic FIFOs" project
+//
 //
 //
 //
@@ -534,7 +539,7 @@ always @(posedge clk_i)
 	   4'h1:	tx_data_st <= #1 ep1_din;
 	   4'h2:	tx_data_st <= #1 ep2_din;
 	   4'h3:	tx_data_st <= #1 ep3_din;
-	   4'h3:	tx_data_st <= #1 ep4_din;
+	   4'h4:	tx_data_st <= #1 ep4_din;
 	   4'h5:	tx_data_st <= #1 ep5_din;
 	   4'h6:	tx_data_st <= #1 ep6_din;
 	   4'h7:	tx_data_st <= #1 ep7_din;
