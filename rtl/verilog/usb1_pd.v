@@ -38,16 +38,19 @@
 
 //  CVS Log
 //
-//  $Id: usb1_pd.v,v 1.1.1.1 2002-09-19 12:07:17 rudi Exp $
+//  $Id: usb1_pd.v,v 1.2 2002-09-25 06:06:49 rudi Exp $
 //
-//  $Date: 2002-09-19 12:07:17 $
-//  $Revision: 1.1.1.1 $
+//  $Date: 2002-09-25 06:06:49 $
+//  $Revision: 1.2 $
 //  $Author: rudi $
 //  $Locker:  $
 //  $State: Exp $
 //
 // Change History:
 //               $Log: not supported by cvs2svn $
+//               Revision 1.1.1.1  2002/09/19 12:07:17  rudi
+//               Initial Checkin
+//
 //
 //
 //
@@ -78,7 +81,7 @@ module usb1_pd(	clk, rst,
 		rx_data_st, rx_data_valid, rx_data_done, crc16_err,
 
 		// Misc.
-		seq_err
+		seq_err, rx_busy
 		);
 
 input		clk, rst;
@@ -107,6 +110,7 @@ output		rx_data_done;		// Indicates end of a transfer
 output		crc16_err;		// Data packet CRC 16 error
 
 output		seq_err;		// State Machine Sequence Error
+output		rx_busy;		// Receivig Data Packet
 
 ///////////////////////////////////////////////////////////////////
 //
@@ -165,6 +169,18 @@ wire	[15:0]	crc16_out;
 //
 // Misc Logic
 //
+
+reg	rx_busy, rx_busy_d;
+
+always @(posedge clk or negedge rst)
+	if(!rst)			rx_busy_d <= #1 1'b0;
+	else
+	if(rx_valid & (state == DATA))	rx_busy_d <= #1 1'b1;
+	else
+	if(state != DATA)		rx_busy_d <= #1 1'b0;
+
+always @(posedge clk)
+	rx_busy <= #1 rx_busy_d;
 
 // PID Decoding Logic
 assign pid_ld_en = pid_le_sm & rx_active & rx_valid;

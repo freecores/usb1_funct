@@ -38,16 +38,19 @@
 
 //  CVS Log
 //
-//  $Id: usb1_ctrl.v,v 1.1.1.1 2002-09-19 12:07:09 rudi Exp $
+//  $Id: usb1_ctrl.v,v 1.2 2002-09-25 06:06:49 rudi Exp $
 //
-//  $Date: 2002-09-19 12:07:09 $
-//  $Revision: 1.1.1.1 $
+//  $Date: 2002-09-25 06:06:49 $
+//  $Revision: 1.2 $
 //  $Author: rudi $
 //  $Locker:  $
 //  $State: Exp $
 //
 // Change History:
 //               $Log: not supported by cvs2svn $
+//               Revision 1.1.1.1  2002/09/19 12:07:09  rudi
+//               Initial Checkin
+//
 //
 //
 //
@@ -57,6 +60,8 @@
 `include "usb1_defines.v"
 
 module usb1_ctrl(	clk, rst,
+
+			rom_adr, rom_data,
 
 			ctrl_setup, ctrl_in, ctrl_out,
 
@@ -70,6 +75,9 @@ module usb1_ctrl(	clk, rst,
 		);
 
 input		clk, rst;
+
+output	[6:0]	rom_adr;
+input	[7:0]	rom_data;
 
 input		ctrl_setup;
 input		ctrl_in;
@@ -172,10 +180,10 @@ wire	clr_halt;
 wire	set_halt=0;	// FIX_ME
 
 // For this implementation we do not implement HALT for the
-// device nor for any of the endpoints. This is is useless for
+// device nor for any of the endpoints. This is useless for
 // this device, but can be added here later ...
 // FYI, we report device/endpoint errors via interrupts,
-// instead of halting the entire or paret of the device, much
+// instead of halting the entire or part of the device, much
 // nicer for non-critical errors.
 
 assign clr_halt = ctrl_setup;
@@ -202,7 +210,6 @@ always @(posedge clk)
 // Descriptor ROM
 //
 reg	[6:0]	rom_adr;
-wire	[7:0]	rom_dout;
 reg		rom_sel, rom_sel_r;
 wire		rom_done;
 reg	[6:0]	rom_size;
@@ -210,55 +217,35 @@ reg		fifo_we_rom_r;
 reg		fifo_we_rom_r2;
 wire		fifo_we_rom;
 reg	[7:0]	rom_start_d;
-
 reg	[6:0]	rom_size_dd;
 wire	[6:0]	rom_size_d;
 
-parameter	ROM_SIZE0	=	7'd018,
-		ROM_SIZE1	=	7'd053,
-		ROM_SIZE2A	=	7'd004,
-		ROM_SIZE2B	=	7'd010,
-		ROM_SIZE2C	=	7'd010,
-		ROM_SIZE2D	=	7'd010;
-
-parameter	ROM_START0	=	7'h00,
-		ROM_START1	=	7'h12,
-		ROM_START2A	=	7'h47,
-		ROM_START2B	=	7'h50,
-		ROM_START2C	=	7'h60,
-		ROM_START2D	=	7'h70;
-
-usb1_rom1 rom1(	.clk(		clk		),
-		.adr(		rom_adr		),
-		.dout(		rom_dout	)
-		);
-
 always @(wValue)
 	case(wValue[11:8])		// synopsys full_case parallel_case
-	   4'h1:	rom_start_d = ROM_START0;
-	   4'h2:	rom_start_d = ROM_START1;
+	   4'h1:	rom_start_d = `ROM_START0;
+	   4'h2:	rom_start_d = `ROM_START1;
 	   4'h3:
 		case(wValue[3:0])	// synopsys full_case parallel_case
-		   4'h00:	rom_start_d = ROM_START2A;
-		   4'h01:	rom_start_d = ROM_START2B;
-		   4'h02:	rom_start_d = ROM_START2C;
-		   4'h03:	rom_start_d = ROM_START2D;
-		   default:	rom_start_d = ROM_START2A;
+		   4'h00:	rom_start_d = `ROM_START2A;
+		   4'h01:	rom_start_d = `ROM_START2B;
+		   4'h02:	rom_start_d = `ROM_START2C;
+		   4'h03:	rom_start_d = `ROM_START2D;
+		   default:	rom_start_d = `ROM_START2A;
 		endcase
 	   default:	rom_start_d = 7'h00;
 	endcase
 
 always @(wValue)
 	case(wValue[11:8])		// synopsys full_case parallel_case
-	   4'h1:	rom_size_dd = ROM_SIZE0;
-	   4'h2:	rom_size_dd = ROM_SIZE1;
+	   4'h1:	rom_size_dd = `ROM_SIZE0;
+	   4'h2:	rom_size_dd = `ROM_SIZE1;
 	   4'h3:
 		case(wValue[3:0])	// synopsys full_case parallel_case
-		   4'h00:	rom_size_dd = ROM_SIZE2A;
-		   4'h01:	rom_size_dd = ROM_SIZE2B;
-		   4'h02:	rom_size_dd = ROM_SIZE2C;
-		   4'h03:	rom_size_dd = ROM_SIZE2D;
-		   default:	rom_size_dd = ROM_SIZE2A;
+		   4'h00:	rom_size_dd = `ROM_SIZE2A;
+		   4'h01:	rom_size_dd = `ROM_SIZE2B;
+		   4'h02:	rom_size_dd = `ROM_SIZE2C;
+		   4'h03:	rom_size_dd = `ROM_SIZE2D;
+		   default:	rom_size_dd = `ROM_SIZE2A;
 		endcase
 	   default:	rom_size_dd = 7'h01;
 	endcase
@@ -351,7 +338,7 @@ assign high_sel = write_done_r;
 
 always @(posedge clk)
 	case(data_sel)		// synopsys full_case parallel_case
-	   ZERO_DATA:		ep0_dout <= #1 rom_sel ? rom_dout : 8'h0;
+	   ZERO_DATA:		ep0_dout <= #1 rom_sel ? rom_data : 8'h0;
 	   ZERO_ONE_DATA:	ep0_dout <= #1 high_sel ? 8'h1 : 8'h0;
 	   CONFIG_DATA:		ep0_dout <= #1 {7'h0, configured};	// return configuration
 	   SYNC_FRAME_DATA:	ep0_dout <= #1 high_sel ? {5'h0, frame_no[10:8]} : frame_no[7:0];
@@ -372,10 +359,12 @@ always @(posedge clk)
 
 
 always @(posedge clk)
-	write_done_r <= #1 in_size_2 & !fifo_full & fifo_we_d & !write_done_r & !write_done;
+	write_done_r <= #1 in_size_2 & !fifo_full & fifo_we_d &
+				!write_done_r & !write_done;
 
 always @(posedge clk)
-	write_done <= #1 in_size_2 & !fifo_full & fifo_we_d & write_done_r & !write_done;
+	write_done <= #1 in_size_2 & !fifo_full & fifo_we_d &
+				write_done_r & !write_done;
 
 ///////////////////////////////////////////////////////////////////
 //
@@ -399,7 +388,7 @@ parameter	V_SET_INT	=	8'h0f;
 		
 
 assign bmReqType = hdr0;
-assign bm_req_dir = bmReqType[7];	//  0-Host to device; 1-device to host 
+assign bm_req_dir = bmReqType[7];	// 0-Host to device; 1-device to host 
 assign bm_req_type = bmReqType[6:5];	// 0-standard; 1-class; 2-vendor; 3-RESERVED
 assign bm_req_recp = bmReqType[4:0];	// 0-device; 1-interface; 2-endpoint; 3-other
 					// 4..31-reserved
@@ -411,47 +400,62 @@ assign wLength  = {hdr7, hdr6};
 always @(posedge clk)
 	hdr_done_r <= #1 hdr_done;
 
+// Standard commands that MUST support
 always @(posedge clk)
-	get_status <= #1 hdr_done & (bRequest == GET_STATUS) & (bm_req_type==2'h0);
+	get_status <= #1	hdr_done & (bRequest == GET_STATUS) &
+								(bm_req_type==2'h0);
 
 always @(posedge clk)
-	clear_feature <= #1 hdr_done & (bRequest == CLEAR_FEATURE) & (bm_req_type==2'h0);
+	clear_feature <= #1	hdr_done & (bRequest == CLEAR_FEATURE) &
+								(bm_req_type==2'h0);
 
 always @(posedge clk)
-	set_feature <= #1 hdr_done & (bRequest == SET_FEATURE) & (bm_req_type==2'h0);
+	set_feature <= #1	hdr_done & (bRequest == SET_FEATURE) &
+								(bm_req_type==2'h0);
 
 always @(posedge clk)
-	set_address <= #1 hdr_done & (bRequest == SET_ADDRESS) & (bm_req_type==2'h0);
+	set_address <= #1	hdr_done & (bRequest == SET_ADDRESS) &
+								(bm_req_type==2'h0);
 
 always @(posedge clk)
-	get_descriptor <= #1 hdr_done & (bRequest == GET_DESCRIPTOR) & (bm_req_type==2'h0);
+	get_descriptor <= #1	hdr_done & (bRequest == GET_DESCRIPTOR) &
+								(bm_req_type==2'h0);
 
 always @(posedge clk)
-	set_descriptor <= #1 hdr_done & (bRequest == SET_DESCRIPTOR) & (bm_req_type==2'h0);
+	set_descriptor <= #1	hdr_done & (bRequest == SET_DESCRIPTOR) &
+								(bm_req_type==2'h0);
 
 always @(posedge clk)
-	get_config <= #1 hdr_done & (bRequest == GET_CONFIG) & (bm_req_type==2'h0);
+	get_config <= #1	hdr_done & (bRequest == GET_CONFIG) &
+								(bm_req_type==2'h0);
 
 always @(posedge clk)
-	set_config <= #1 hdr_done & (bRequest == SET_CONFIG) & (bm_req_type==2'h0);
+	set_config <= #1	hdr_done & (bRequest == SET_CONFIG) &
+								(bm_req_type==2'h0);
 
 always @(posedge clk)
-	get_interface <= #1 hdr_done & (bRequest == GET_INTERFACE) & (bm_req_type==2'h0);
+	get_interface <= #1	hdr_done & (bRequest == GET_INTERFACE) &
+								(bm_req_type==2'h0);
 
 always @(posedge clk)
-	set_interface <= #1 hdr_done & (bRequest == SET_INTERFACE) & (bm_req_type==2'h0);
+	set_interface <= #1	hdr_done & (bRequest == SET_INTERFACE) &
+								(bm_req_type==2'h0);
 
 always @(posedge clk)
-	synch_frame <= #1 hdr_done & (bRequest == SYNCH_FRAME) & (bm_req_type==2'h0);
+	synch_frame <= #1	hdr_done & (bRequest == SYNCH_FRAME) &
+								(bm_req_type==2'h0);
 
 always @(posedge clk)
-	v_set_int <= #1 hdr_done & (bRequest == V_SET_INT) & (bm_req_type==2'h2);
+	v_set_int <= #1		hdr_done & (bRequest == V_SET_INT) &
+								(bm_req_type==2'h2);
 
 always @(posedge clk)
-	v_set_feature <= #1 hdr_done & (bRequest == SET_FEATURE) & (bm_req_type==2'h2);
+	v_set_feature <= #1	hdr_done & (bRequest == SET_FEATURE) &
+								(bm_req_type==2'h2);
 
 always @(posedge clk)
-	v_get_status <= #1 hdr_done & (bRequest == GET_STATUS) & (bm_req_type==2'h2);
+	v_get_status <= #1	hdr_done & (bRequest == GET_STATUS) &
+								(bm_req_type==2'h2);
 
 // A config err must cause the device to send a STALL for an ACK
 always @(posedge clk)
@@ -460,7 +464,6 @@ always @(posedge clk)
 			set_descriptor | get_config | set_config |
 			get_interface | set_interface | synch_frame |
 			v_set_int | v_set_feature | v_get_status);
-
 
 always @(posedge clk)
 	send_stall <= #1 config_err;
@@ -606,7 +609,7 @@ always @(state or ctrl_setup or ctrl_in or ctrl_out or hdr_done or
 	   SET_DESCRIPTOR_S:
 		   begin
 			// This doesn't do anything since we do not support
-			// seting the descriptor
+			// setting the descriptor
 			next_state = IDLE;
 		   end
 

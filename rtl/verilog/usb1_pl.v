@@ -40,16 +40,19 @@
 
 //  CVS Log
 //
-//  $Id: usb1_pl.v,v 1.1.1.1 2002-09-19 12:07:28 rudi Exp $
+//  $Id: usb1_pl.v,v 1.2 2002-09-25 06:06:49 rudi Exp $
 //
-//  $Date: 2002-09-19 12:07:28 $
-//  $Revision: 1.1.1.1 $
+//  $Date: 2002-09-25 06:06:49 $
+//  $Revision: 1.2 $
 //  $Author: rudi $
 //  $Locker:  $
 //  $State: Exp $
 //
 // Change History:
 //               $Log: not supported by cvs2svn $
+//               Revision 1.1.1.1  2002/09/19 12:07:28  rudi
+//               Initial Checkin
+//
 //
 //
 //
@@ -71,7 +74,7 @@ module usb1_pl(	clk, rst,
 		// Register File Interface
 		fa,
 		ep_sel, 
-
+		x_busy,
 		int_crc16_set, int_to_set, int_seqerr_set,
 
 		// Misc
@@ -80,6 +83,9 @@ module usb1_pl(	clk, rst,
 		crc5_err,
 		rx_size, rx_done,
 		ctrl_setup, ctrl_in, ctrl_out,
+
+		// Block Frames
+		ep_bf_en, ep_bf_size,
 		dropped_frame, misaligned_frame,
 
 		// EP Interface
@@ -105,6 +111,7 @@ output		token_valid;
 // Register File interface
 input	[6:0]	fa;		// Function Address (as set by the controller)
 output	[3:0]	ep_sel;		// Endpoint Number Input
+output		x_busy;		// Indicates USB is busy
 
 output		int_crc16_set;	// Set CRC16 error interrupt
 output		int_to_set;	// Set time out interrupt
@@ -120,6 +127,8 @@ output		rx_done;
 output		ctrl_setup;
 output		ctrl_in;
 output		ctrl_out;
+input		ep_bf_en;
+input	[6:0]	ep_bf_size;
 output		dropped_frame, misaligned_frame;
 
 // Endpoint Interfaces
@@ -192,12 +201,16 @@ reg		ctrl_in;
 reg		ctrl_out;
 
 wire		idma_we_d;
-wire		ep_empty_latched;
+wire		ep_empty_int;
+wire		rx_busy;
+wire		tx_busy;
 
 ///////////////////////////////////////////////////////////////////
 //
 // Misc Logic
 //
+
+assign x_busy = tx_busy | rx_busy;
 
 // PIDs we should never receive
 assign pid_bad = pid_ACK | pid_NACK | pid_STALL | pid_NYET | pid_PRE |
@@ -205,7 +218,7 @@ assign pid_bad = pid_ACK | pid_NACK | pid_STALL | pid_NYET | pid_PRE |
 
 assign match_o = !pid_bad & token_valid & !crc5_err;
 
-// Recieving Setup
+// Receiving Setup
 always @(posedge clk)
 	ctrl_setup <= #1 token_valid & pid_SETUP & (ep_sel==4'h0);
 
@@ -263,7 +276,6 @@ assign idma_we = idma_we_d & fsel; // moved full check to idma ...  & !ep_full;
 // Module Instantiations
 //
 
-
 //Packet Decoder
 usb1_pd	u0(	.clk(		clk		),
 		.rst(		rst		),
@@ -298,7 +310,8 @@ usb1_pd	u0(	.clk(		clk		),
 		.rx_data_valid(	rx_data_valid	),
 		.rx_data_done(	rx_data_done	),
 		.crc16_err(	crc16_err	),
-		.seq_err(	rx_seq_err	)
+		.seq_err(	rx_seq_err	),
+		.rx_busy(	rx_busy		)
 		);
 
 // Packet Assembler
@@ -315,7 +328,7 @@ usb1_pa	u1(	.clk(		clk		),
 		.data_pid_sel(	data_pid_sel	),
 		.tx_data_st(	tx_data_st_o	),
 		.rd_next(	rd_next		),
-		.ep_empty(	ep_empty_latched)
+		.ep_empty(	ep_empty_int)
 		);
 
 // Internal DMA / Memory Arbiter Interface
@@ -333,8 +346,12 @@ usb1_idma
 		.tx_data_st_o(	tx_data_st_o	),
 		.ep_sel(	ep_sel		),
 
+		.ep_bf_en(	ep_bf_en	),
+		.ep_bf_size(	ep_bf_size	),
 		.dropped_frame(dropped_frame	),
 		.misaligned_frame(misaligned_frame),
+
+		.tx_busy(	tx_busy		),
 
 		.tx_dma_en(	tx_dma_en	),
 		.rx_dma_en(	rx_dma_en	),
@@ -345,7 +362,7 @@ usb1_idma
 		.mwe(		idma_we_d	),
 		.mre(		idma_re		),
 		.ep_empty(	ep_empty	),
-		.ep_empty_latched(ep_empty_latched),
+		.ep_empty_int(	ep_empty_int	),
 		.ep_full(	ep_full		)
 		);
 
@@ -390,6 +407,4 @@ usb1_pe
 		.send_stall(		send_stall		)
 		);
 
-
 endmodule
-

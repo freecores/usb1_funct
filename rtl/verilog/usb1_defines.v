@@ -38,16 +38,19 @@
 
 //  CVS Log
 //
-//  $Id: usb1_defines.v,v 1.2 2002-09-20 11:46:54 rudi Exp $
+//  $Id: usb1_defines.v,v 1.3 2002-09-25 06:06:49 rudi Exp $
 //
-//  $Date: 2002-09-20 11:46:54 $
-//  $Revision: 1.2 $
+//  $Date: 2002-09-25 06:06:49 $
+//  $Revision: 1.3 $
 //  $Author: rudi $
 //  $Locker:  $
 //  $State: Exp $
 //
 // Change History:
 //               $Log: not supported by cvs2svn $
+//               Revision 1.2  2002/09/20 11:46:54  rudi
+//               fixed a type 'define' was missing ...
+//
 //               Revision 1.1.1.1  2002/09/19 12:07:40  rudi
 //               Initial Checkin
 //
@@ -64,9 +67,8 @@
 //`define USBF_DEBUG
 //`define USBF_VERBOSE_DEBUG
 
-
-// Enable or disable using chunkc for isochronous endpoints
-`define USB1_ISO_CHUNKS
+// Enable or disable Block Frames
+//`define USB1_BF_ENABLE
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -76,6 +78,21 @@
 //
 /////////////////////////////////////////////////////////////////////
 
+`define	ROM_SIZE0	7'd018	// Device Descriptor Length
+`define	ROM_SIZE1	7'd053	// Configuration Descriptor Length
+`define	ROM_SIZE2A	7'd004	// Language ID Descriptor Start Length
+`define	ROM_SIZE2B	7'd010	// String Descriptor Length
+`define	ROM_SIZE2C	7'd010	// for future use
+`define	ROM_SIZE2D	7'd010	// for future use
+
+`define	ROM_START0	7'h00	// Device Descriptor Start Address
+`define	ROM_START1	7'h12	// Configuration Descriptor Start Address
+`define	ROM_START2A	7'h47	// Language ID Descriptor Start Address
+`define	ROM_START2B	7'h50	// String Descriptor Start Address
+`define	ROM_START2C	7'h60	// for future use
+`define	ROM_START2D	7'h70	// for future use
+
+// Endpoint Configuration Constants
 `define IN	14'b00_001_000000000
 `define OUT	14'b00_010_000000000
 `define CTRL	14'b10_100_000000000
