@@ -10,74 +10,86 @@ a Philips USB transceiver.
 
 Test Bench
 ----------
-There is no test bench, period !
-Please don't email me asking for one, unless you want to hire
-me to write one ! As I said above I have tested this core in
-real hardware and it works just fine.
+I have uploaded a very basic test bench. It should be viewed
+as a starting point to write a more comprehensive and complete
+test bench.
 
 Documentation
 -------------
-Sorry, there is none. I just don't have the time to write it.
+Sorry, there is none. I just don't have the time to write it (yet).
+
 However, since this core is derived from my USB 2.0 Function
 IP core, you might find something useful in there. Main
 difference is that all the high speed support features have
 been ripped out, and the interface was changed from a shared
-memory model to a FIFO based interface. Further there is no
-need for a micro-controller interface and/or register file.
+memory model to a FIFO based model. Further there is no need
+for a micro-controller interface and/or register file.
 
 
 Here is the quick info:
 
-The core comes pre-configured with 6 endpoints:
+The core will perform all USB enumeration in hardware. Meaning
+it will automatically respond to the hosts SETUP packets and
+send back appropriate information (which you must enter in to
+the ROM). The enumeration process is usually very simple. The
+host first requests a device Descriptor, which tells the host
+some basic information about the device. Then it gets the
+configuration descriptor, which descries the entire configuration
+including all interfaces and endpoints. In this implementation
+no descriptor may be larger than 64 bytes.
 
-ep 0 - Control endpoint [64/64]
-ep 1 - isochronous IN [256/512]
-ep 2 - isochronous OUT [256/512]
-ep 3 - bulk IN [64/256]
-ep 4 - bulk OUT [64/256]
-ep 5 - interrupt IN [64/64]
+I have created anew top level since last check-in. Here is the
+hierarchical view of the USB core:
 
-The numbers in brackets are [Max Payload Size/Max FIFO Size]
+usb1_core
+    |
+    +-- usb_phy
+    |      |
+    |      +-- usb_tx_phy
+    |      |
+    |      +-- usb_rx_phy
+    |
+    +-- usb1_utmi_if
+    |
+    +-- usb1_pl
+    |      |
+    |      +-- usb1_pd
+    |      |
+    |      +-- usb1_pa
+    |      |
+    |      +-- usb1_idma
+    |      |
+    |      +-- usb1_pe
+    |
+    +-- usb1_ctrl
+    |
+    +-- usb1_rom1
+    |
+    +-- 2x generic_fifo_sc_a
+           |
+           +-- generic_dpram
 
-The isochronous endpoints are handled special.  Data is
-always transfered in 32 byte "chunks". If the FIFO can not
-accept a 32 "byte" chunk, that chunk is dropped and
-'dropped_frame" signal is asserted. If the host sends a
-packet that is not in multiple of 32 bytes the
-"misaligned_frame" signal is asserted.
+The following files have been removed and are no longer needed:
+	usb1_top.v
+	usb1_ep_in.v
+	usb1_ep_out.v
+	usb1_ep.v
+	usb1_fifo.v
 
-This of this "chunks" as being video frames for example.
-It's OK to drop one entire frame, or to display one frame
-multiple times.  However you don't want to loose synchronization,
-where the frame begins or ends. You might want to add some
-encoding on to the data stream itself as well, as a fail
-save mechanism to not get out of sync. All of this might be
-disabled by making sure USB1_ISO_CHUNKS is NOT defined
-anywahere.
+This new release is a more generic and user friendly version of the
+first release. You can now easy configure the endpoints and other
+features. FIFOs are external to the core, you can chose the fifo
+that best fits you from the "generfic_fifos" projects at OpenCores.
+This includes choosing a dual clock fifo if you need to.
 
-Vendor Features allow you to define your own features and
-set and check various device parameters. For example you
-might wan tot count the number of drooped frames so that
-the host can read this out for statistics purposes.
+The new top level (usb1_core.v) has now a brief description of the
+IO signals. Hopefully that description and the test bench will be
+sufficient to get you started.
 
-This core will perform the entire USB 1.1 enumeration
-process in hardware. All you need is to edit the usb1_rom1.v
-file and put appropriate values there. This allows you to build
-a USB 1.1 device without the need for a micro-controller/CPU.
-For example a mouse or joystick ...
+Also remember that you MUST edit the ROM to properly configure the
+settings for your implementation and enter proper vendor IDs, etc.
 
-The top level should be considered an example how to build
-your own customized USB 1.1 device. 
-
-The 'loop' signal allows you to place the isochronous and
-bulk endpoints in to a loop back mode. Use that is you just
-wan to see the core talk to your Linux box. Place it in to
-loop-back mode, compile it in to and FPGA and plug in to your
-PC running Linux.  Type 'lsusb' and you should see a device
-which enumerated to "1234:5678" Strings don't work without a
-dedicated driver that takes control of the device (At least
-under RedHat linux 7.3).
-
+I will try to write a more complete documentation as I get the time.
 
 Misc
 ----
@@ -86,7 +98,6 @@ http://www.opencores.org/cores/usb1_funct/
 
 To find out more about me (Rudolf Usselmann), please visit:
 http://www.asics.ws
-
 
 Directory Structure
 -------------------
