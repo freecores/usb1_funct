@@ -38,16 +38,19 @@
 
 //  CVS Log
 //
-//  $Id: usb1_defines.v,v 1.1.1.1 2002-09-19 12:07:40 rudi Exp $
+//  $Id: usb1_defines.v,v 1.2 2002-09-20 11:46:54 rudi Exp $
 //
-//  $Date: 2002-09-19 12:07:40 $
-//  $Revision: 1.1.1.1 $
+//  $Date: 2002-09-20 11:46:54 $
+//  $Revision: 1.2 $
 //  $Author: rudi $
 //  $Locker:  $
 //  $State: Exp $
 //
 // Change History:
 //               $Log: not supported by cvs2svn $
+//               Revision 1.1.1.1  2002/09/19 12:07:40  rudi
+//               Initial Checkin
+//
 //
 //
 //
@@ -63,7 +66,7 @@
 
 
 // Enable or disable using chunkc for isochronous endpoints
-`USB1_ISO_CHUNKS
+`define USB1_ISO_CHUNKS
 
 /////////////////////////////////////////////////////////////////////
 //
